@@ -3,13 +3,17 @@ const github = require('@actions/github')
 
 run()
 
+
 async function run() {
   try {
     const title = github.context.payload.pull_request.title
     core.info(`The title of PR is ${title}`)
     const prNumber = github.context.payload.pull_request.number
+    const owner = github.context.repo.owner
+    const repo = github.context.repo.repo
+
     const client = getOctokit()
-    await addLabelForTitle(client, prNumber, title)
+    await addLabelForTitle(client, prNumber, owner, repo, title)
   } catch (error) {
     core.setFailed(error.message);
   }
@@ -21,7 +25,7 @@ function getOctokit() {
   return octokit
 }
 
-async function addLabelForTitle(client, prNumber, title) {
+async function addLabelForTitle(client, prNumber, owner, repo, title) {
   let labelToAdd = 'UnrelatedToToken'
   let labelsToRemove = ["NewToken", "UpdateToken"]
   if (title.startsWith('feat[NewToken]:')) {
@@ -32,16 +36,18 @@ async function addLabelForTitle(client, prNumber, title) {
     labelsToRemove = ["NewToken", "UnrelatedToToken"]
   }
 
-  await removeLabels(client, prNumber, labelsToRemove)
-  await addLabel(client, prNumber, labelToAdd)
+  try {
+    await removeLabels(client, prNumber, owner, repo, labelsToRemove)
+  } catch (e) {}
+  await addLabel(client, prNumber, owner, repo, labelToAdd)
 }
 
-async function removeLabels(client, prNumber, labels) {
+async function removeLabels(client, prNumber, owner, repo, labels) {
   await Promise.all(
     labels.map((label) =>
       client.rest.issues.removeLabel({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
+        owner: owner,
+        repo: repo,
         issue_number: prNumber,
         name: label,
       })
@@ -49,11 +55,11 @@ async function removeLabels(client, prNumber, labels) {
   );
 }
 
-async function addLabel(client, prNumber, label) {
+async function addLabel(client, prNumber, owner, repo, label) {
   core.info(`Adding label (${label}) to PR...`);
   let resp = await client.issues.addLabels({
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
+    owner: owner,
+    repo: repo,
     issue_number: prNumber,
     name: [label],
   });
