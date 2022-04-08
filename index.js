@@ -61,7 +61,7 @@ async function addLabel(client, prNumber, owner, repo, label) {
     owner: owner,
     repo: repo,
     issue_number: prNumber,
-    name: [label],
+    addLabels: [label],
   });
   core.info(`Added label (${label}) to PR - ${resp.status}`)
   if (resp.status > 299) {
