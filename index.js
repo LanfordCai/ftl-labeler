@@ -57,7 +57,7 @@ async function removeLabels(client, prNumber, owner, repo, labels) {
 
 async function addLabel(client, prNumber, owner, repo, label) {
   core.info(`Adding label (${label}) to PR...`);
-  let resp = await client.issues.addLabels({
+  let resp = await client.rest.issues.addLabels({
     owner: owner,
     repo: repo,
     issue_number: prNumber,
