@@ -1686,7 +1686,6 @@ var __webpack_exports__ = {};
 (() => {
 const core = __nccwpck_require__(186)
 const github = __nccwpck_require__(716)
-const configPath = process.env.INPUT_CONFIGURATION_PATH
 
 run()
 
@@ -1696,7 +1695,6 @@ async function run() {
     core.info(`The title of PR is ${title}`)
     const prNumber = github.context.payload.pull_request.number
     const client = getOctokit()
-
     await addLabelForTitle(client, prNumber, title)
   } catch (error) {
     core.setFailed(error.message);
