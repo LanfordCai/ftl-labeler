@@ -1555,19 +1555,10 @@ exports.debug = debug; // for test
 
 /***/ }),
 
-/***/ 258:
+/***/ 716:
 /***/ ((module) => {
 
-let wait = function (milliseconds) {
-  return new Promise((resolve) => {
-    if (typeof milliseconds !== 'number') {
-      throw new Error('milliseconds not a number');
-    }
-    setTimeout(() => resolve("done!"), milliseconds)
-  });
-};
-
-module.exports = wait;
+module.exports = eval("require")("@actions/github");
 
 
 /***/ }),
@@ -1693,28 +1684,72 @@ module.exports = require("util");
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
-const core = __nccwpck_require__(186);
-const wait = __nccwpck_require__(258);
+const core = __nccwpck_require__(186)
+const github = __nccwpck_require__(716)
+const configPath = process.env.INPUT_CONFIGURATION_PATH
 
+run()
 
-// most @actions toolkit packages have async methods
 async function run() {
   try {
-    const ms = core.getInput('milliseconds');
-    core.info(`Waiting ${ms} milliseconds ...`);
+    const title = github.context.payload.pull_request.title
+    core.info(`The title of PR is ${title}`)
+    const prNumber = github.context.payload.pull_request.number
+    const client = getOctokit()
 
-    core.debug((new Date()).toTimeString()); // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-    await wait(parseInt(ms));
-    core.info((new Date()).toTimeString());
-
-    core.setOutput('time', new Date().toTimeString());
+    await addLabelForTitle(client, prNumber, title)
   } catch (error) {
     core.setFailed(error.message);
   }
 }
 
-run();
+function getOctokit() {
+  const gh_token = process.env.GITHUB_TOKEN
+  const octokit = github.getOctokit(token=gh_token)
+  return octokit
+}
 
+async function addLabelForTitle(client, prNumber, title) {
+  let labelToAdd = 'UnrelatedToToken'
+  let labelsToRemove = ["NewToken", "UpdateToken"]
+  if (title.startsWith('feat[NewToken]:')) {
+    labelToAdd = "NewToken"
+    labelsToRemove = ["UpdateToken", "UnrelatedToToken"]
+  } else if (title.startsWith('feat[UpdateToken]:')) {
+    labelToAdd = "UpdateToken"
+    labelsToRemove = ["NewToken", "UnrelatedToToken"]
+  }
+
+  await removeLabels(client, prNumber, labelsToRemove)
+  await addLabel(client, prNumber, labelToAdd)
+}
+
+async function removeLabels(client, prNumber, labels) {
+  await Promise.all(
+    labels.map((label) =>
+      client.rest.issues.removeLabel({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: prNumber,
+        name: label,
+      })
+    )
+  );
+}
+
+async function addLabel(client, prNumber, label) {
+  core.info(`Adding label (${label}) to PR...`);
+  let resp = await client.issues.addLabels({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    issue_number: prNumber,
+    name: [label],
+  });
+  core.info(`Added label (${label}) to PR - ${resp.status}`)
+  if (resp.status > 299) {
+    throw new Error("add label failed")
+  }
+}
 })();
 
 module.exports = __webpack_exports__;
