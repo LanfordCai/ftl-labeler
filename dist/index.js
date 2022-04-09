@@ -8498,10 +8498,10 @@ function getOctokit() {
 async function addLabelForTitle(client, prNumber, owner, repo, title) {
   let labelToAdd = 'UnrelatedToToken'
   let labelsToRemove = ["NewToken", "UpdateToken"]
-  if (title.startsWith('feat[NewToken]:')) {
+  if (title.startsWith('feat(NewToken):')) {
     labelToAdd = "NewToken"
     labelsToRemove = ["UpdateToken", "UnrelatedToToken"]
-  } else if (title.startsWith('feat[UpdateToken]:')) {
+  } else if (title.startsWith('feat(UpdateToken):')) {
     labelToAdd = "UpdateToken"
     labelsToRemove = ["NewToken", "UnrelatedToToken"]
   }
@@ -8533,7 +8533,6 @@ async function addLabel(client, prNumber, owner, repo, label) {
     issue_number: prNumber,
     labels: [label],
   });
-  core.info(`Added label (${label}) to PR - ${resp.status}`)
   if (resp.status > 299) {
     throw new Error("add label failed")
   }
