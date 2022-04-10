@@ -1,0 +1,5 @@
+name: 'ftl-labeler'
+description: 'label flow-token-list'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
