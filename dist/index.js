@@ -8496,20 +8496,23 @@ function getOctokit() {
 }
 
 async function addLabelForTitle(client, prNumber, owner, repo, title) {
-  let labelToAdd = 'UnrelatedToToken'
+  let labelToAdd = null 
   let labelsToRemove = ["NewToken", "UpdateToken"]
   if (title.startsWith('feat(NewToken):')) {
     labelToAdd = "NewToken"
-    labelsToRemove = ["UpdateToken", "UnrelatedToToken"]
+    labelsToRemove = ["UpdateToken"]
   } else if (title.startsWith('feat(UpdateToken):')) {
     labelToAdd = "UpdateToken"
-    labelsToRemove = ["NewToken", "UnrelatedToToken"]
+    labelsToRemove = ["NewToken"]
   }
 
   try {
     await removeLabels(client, prNumber, owner, repo, labelsToRemove)
   } catch (e) {}
-  await addLabel(client, prNumber, owner, repo, labelToAdd)
+
+  if (labelToAdd) {
+    await addLabel(client, prNumber, owner, repo, labelToAdd)
+  }
 }
 
 async function removeLabels(client, prNumber, owner, repo, labels) {
